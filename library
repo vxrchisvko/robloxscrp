@@ -1,0 +1,135 @@
+local Library = {}
+
+function Library:CreateWindow(title)
+    local ScreenGui = Instance.new("ScreenGui", game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"))
+    ScreenGui.Name = "CustomUILib"
+    ScreenGui.ResetOnSpawn = false
+
+    -- Main container
+    local MainFrame = Instance.new("Frame", ScreenGui)
+    MainFrame.Size = UDim2.new(0, 600, 0, 400)
+    MainFrame.Position = UDim2.new(0.5, -300, 0.5, -200)
+    MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+    MainFrame.BorderSizePixel = 0
+    MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+
+    local UICorner = Instance.new("UICorner", MainFrame)
+    UICorner.CornerRadius = UDim.new(0, 12)
+
+    -- Left Tabs Panel
+    local TabsFrame = Instance.new("Frame", MainFrame)
+    TabsFrame.Size = UDim2.new(0, 80, 1, 0)
+    TabsFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+
+    local TabsLayout = Instance.new("UIListLayout", TabsFrame)
+    TabsLayout.Padding = UDim.new(0, 8)
+    TabsLayout.SortOrder = Enum.SortOrder.LayoutOrder
+
+    local TabContent = Instance.new("Frame", MainFrame)
+    TabContent.Size = UDim2.new(1, -80, 1, 0)
+    TabContent.Position = UDim2.new(0, 80, 0, 0)
+    TabContent.BackgroundTransparency = 1
+
+    local Tabs = {}
+
+    function Tabs:AddTab(tabName, iconId)
+        local Button = Instance.new("TextButton", TabsFrame)
+        Button.Size = UDim2.new(1, 0, 0, 60)
+        Button.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+        Button.Text = ""
+        Button.AutoButtonColor = false
+        local BtnCorner = Instance.new("UICorner", Button)
+        BtnCorner.CornerRadius = UDim.new(0, 10)
+
+        local Icon = Instance.new("ImageLabel", Button)
+        Icon.Image = "rbxassetid://" .. tostring(iconId)
+        Icon.Size = UDim2.new(0, 32, 0, 32)
+        Icon.Position = UDim2.new(0.5, -16, 0.5, -16)
+        Icon.BackgroundTransparency = 1
+
+        local Page = Instance.new("Frame", TabContent)
+        Page.Name = tabName
+        Page.Size = UDim2.new(1, 0, 1, 0)
+        Page.BackgroundTransparency = 1
+        Page.Visible = false
+
+        local UIList = Instance.new("UIListLayout", Page)
+        UIList.Padding = UDim.new(0, 10)
+        UIList.SortOrder = Enum.SortOrder.LayoutOrder
+
+        Button.MouseButton1Click:Connect(function()
+            for _, page in pairs(TabContent:GetChildren()) do
+                if page:IsA("Frame") then page.Visible = false end
+            end
+            Page.Visible = true
+        end)
+
+        if #TabContent:GetChildren() == 1 then
+            Page.Visible = true
+        end
+
+        return Page
+    end
+
+    function Tabs:AddSlider(tab, text, min, max, default, callback)
+        local SliderFrame = Instance.new("Frame", tab)
+        SliderFrame.Size = UDim2.new(1, -20, 0, 50)
+        SliderFrame.BackgroundTransparency = 1
+        SliderFrame.Name = text
+
+        local Title = Instance.new("TextLabel", SliderFrame)
+        Title.Text = text
+        Title.TextColor3 = Color3.fromRGB(220, 220, 220)
+        Title.Font = Enum.Font.Gotham
+        Title.TextSize = 14
+        Title.BackgroundTransparency = 1
+        Title.Size = UDim2.new(1, 0, 0, 20)
+        Title.TextXAlignment = Enum.TextXAlignment.Left
+
+        local Bar = Instance.new("Frame", SliderFrame)
+        Bar.Size = UDim2.new(1, 0, 0, 6)
+        Bar.Position = UDim2.new(0, 0, 0, 30)
+        Bar.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+        local BarCorner = Instance.new("UICorner", Bar)
+        BarCorner.CornerRadius = UDim.new(1, 0)
+
+        local Fill = Instance.new("Frame", Bar)
+        Fill.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
+        Fill.BackgroundColor3 = Color3.fromRGB(100, 200, 255)
+        local FillCorner = Instance.new("UICorner", Fill)
+        FillCorner.CornerRadius = UDim.new(1, 0)
+
+        local dragging = false
+        local UIS = game:GetService("UserInputService")
+
+        local function update(input)
+            local pos = math.clamp((input.Position.X - Bar.AbsolutePosition.X) / Bar.AbsoluteSize.X, 0, 1)
+            Fill.Size = UDim2.new(pos, 0, 1, 0)
+            local val = math.floor((min + (max - min) * pos) + 0.5)
+            callback(val)
+        end
+
+        Bar.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                dragging = true
+                update(input)
+            end
+        end)
+
+        Bar.InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                dragging = false
+            end
+        end)
+
+        UIS.InputChanged:Connect(function(input)
+            if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+                update(input)
+            end
+        end)
+    end
+
+    return Tabs
+end
+
+return Library
