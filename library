@@ -1,67 +1,121 @@
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+
 local Library = {}
 
 function Library:CreateWindow(title)
-    local ScreenGui = Instance.new("ScreenGui", game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"))
-    ScreenGui.Name = "CustomUILib"
+    local ScreenGui = Instance.new("ScreenGui", game.Players.LocalPlayer:WaitForChild("PlayerGui"))
+    ScreenGui.Name = "AestheticUILib"
     ScreenGui.ResetOnSpawn = false
 
-    -- Main container
-    local MainFrame = Instance.new("Frame", ScreenGui)
-    MainFrame.Size = UDim2.new(0, 600, 0, 400)
-    MainFrame.Position = UDim2.new(0.5, -300, 0.5, -200)
+    -- Main Frame
+    local MainFrame = Instance.new("Frame")
+    MainFrame.Size = UDim2.new(0, 620, 0, 400)
+    MainFrame.Position = UDim2.new(0.5, -310, 0.5, -200)
     MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
     MainFrame.BorderSizePixel = 0
     MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+    MainFrame.Parent = ScreenGui
 
-    local UICorner = Instance.new("UICorner", MainFrame)
-    UICorner.CornerRadius = UDim.new(0, 12)
+    local corner = Instance.new("UICorner", MainFrame)
+    corner.CornerRadius = UDim.new(0, 12)
 
-    -- Left Tabs Panel
-    local TabsFrame = Instance.new("Frame", MainFrame)
-    TabsFrame.Size = UDim2.new(0, 80, 1, 0)
-    TabsFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    -- Dragging
+    local dragging, dragInput, dragStart, startPos
 
-    local TabsLayout = Instance.new("UIListLayout", TabsFrame)
-    TabsLayout.Padding = UDim.new(0, 8)
-    TabsLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    MainFrame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = input.Position
+            startPos = MainFrame.Position
 
-    local TabContent = Instance.new("Frame", MainFrame)
-    TabContent.Size = UDim2.new(1, -80, 1, 0)
-    TabContent.Position = UDim2.new(0, 80, 0, 0)
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            local delta = input.Position - dragStart
+            MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+
+    -- Left Tab Panel
+    local TabPanel = Instance.new("Frame")
+    TabPanel.Size = UDim2.new(0, 100, 1, 0)
+    TabPanel.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    TabPanel.Parent = MainFrame
+
+    local TabLayout = Instance.new("UIListLayout", TabPanel)
+    TabLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    TabLayout.Padding = UDim.new(0, 8)
+
+    local TabContent = Instance.new("Frame")
+    TabContent.Size = UDim2.new(1, -100, 1, 0)
+    TabContent.Position = UDim2.new(0, 100, 0, 0)
     TabContent.BackgroundTransparency = 1
+    TabContent.Parent = MainFrame
 
     local Tabs = {}
 
-    function Tabs:AddTab(tabName, iconId)
-        local Button = Instance.new("TextButton", TabsFrame)
+    function Tabs:AddTab(name, iconId)
+        local Button = Instance.new("TextButton")
         Button.Size = UDim2.new(1, 0, 0, 60)
         Button.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
         Button.Text = ""
         Button.AutoButtonColor = false
-        local BtnCorner = Instance.new("UICorner", Button)
-        BtnCorner.CornerRadius = UDim.new(0, 10)
+        Button.Parent = TabPanel
 
-        local Icon = Instance.new("ImageLabel", Button)
+        local ButtonCorner = Instance.new("UICorner", Button)
+        ButtonCorner.CornerRadius = UDim.new(0, 10)
+
+        local Icon = Instance.new("ImageLabel")
         Icon.Image = "rbxassetid://" .. tostring(iconId)
-        Icon.Size = UDim2.new(0, 32, 0, 32)
-        Icon.Position = UDim2.new(0.5, -16, 0.5, -16)
+        Icon.Size = UDim2.new(0, 24, 0, 24)
+        Icon.Position = UDim2.new(0, 10, 0.5, -12)
         Icon.BackgroundTransparency = 1
+        Icon.Parent = Button
 
-        local Page = Instance.new("Frame", TabContent)
-        Page.Name = tabName
+        local Label = Instance.new("TextLabel")
+        Label.Text = name
+        Label.Font = Enum.Font.Gotham
+        Label.TextSize = 14
+        Label.TextColor3 = Color3.fromRGB(220, 220, 220)
+        Label.Position = UDim2.new(0, 40, 0.5, -10)
+        Label.Size = UDim2.new(1, -40, 0, 20)
+        Label.BackgroundTransparency = 1
+        Label.TextXAlignment = Enum.TextXAlignment.Left
+        Label.Parent = Button
+
+        local Page = Instance.new("Frame")
+        Page.Name = name
         Page.Size = UDim2.new(1, 0, 1, 0)
         Page.BackgroundTransparency = 1
         Page.Visible = false
+        Page.Parent = TabContent
 
-        local UIList = Instance.new("UIListLayout", Page)
-        UIList.Padding = UDim.new(0, 10)
-        UIList.SortOrder = Enum.SortOrder.LayoutOrder
+        local Layout = Instance.new("UIListLayout", Page)
+        Layout.SortOrder = Enum.SortOrder.LayoutOrder
+        Layout.Padding = UDim.new(0, 10)
 
         Button.MouseButton1Click:Connect(function()
-            for _, page in pairs(TabContent:GetChildren()) do
-                if page:IsA("Frame") then page.Visible = false end
+            for _, v in ipairs(TabContent:GetChildren()) do
+                if v:IsA("Frame") then
+                    TweenService:Create(v, TweenInfo.new(0.2), {Transparency = 1}):Play()
+                    v.Visible = false
+                end
             end
             Page.Visible = true
+            for _, v in ipairs(Page:GetChildren()) do
+                if v:IsA("GuiObject") then
+                    v.BackgroundTransparency = 1
+                    TweenService:Create(v, TweenInfo.new(0.2), {BackgroundTransparency = 0}):Play()
+                end
+            end
         end)
 
         if #TabContent:GetChildren() == 1 then
@@ -71,36 +125,32 @@ function Library:CreateWindow(title)
         return Page
     end
 
-    function Tabs:AddSlider(tab, text, min, max, default, callback)
-        local SliderFrame = Instance.new("Frame", tab)
-        SliderFrame.Size = UDim2.new(1, -20, 0, 50)
-        SliderFrame.BackgroundTransparency = 1
-        SliderFrame.Name = text
+    function Tabs:AddSlider(tab, name, min, max, default, callback)
+        local Frame = Instance.new("Frame", tab)
+        Frame.Size = UDim2.new(1, -20, 0, 50)
+        Frame.BackgroundTransparency = 1
 
-        local Title = Instance.new("TextLabel", SliderFrame)
-        Title.Text = text
-        Title.TextColor3 = Color3.fromRGB(220, 220, 220)
+        local Title = Instance.new("TextLabel", Frame)
+        Title.Text = name
         Title.Font = Enum.Font.Gotham
         Title.TextSize = 14
-        Title.BackgroundTransparency = 1
+        Title.TextColor3 = Color3.fromRGB(200, 200, 200)
         Title.Size = UDim2.new(1, 0, 0, 20)
+        Title.BackgroundTransparency = 1
         Title.TextXAlignment = Enum.TextXAlignment.Left
 
-        local Bar = Instance.new("Frame", SliderFrame)
+        local Bar = Instance.new("Frame", Frame)
         Bar.Size = UDim2.new(1, 0, 0, 6)
         Bar.Position = UDim2.new(0, 0, 0, 30)
-        Bar.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-        local BarCorner = Instance.new("UICorner", Bar)
-        BarCorner.CornerRadius = UDim.new(1, 0)
+        Bar.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+        Bar.BorderSizePixel = 0
 
         local Fill = Instance.new("Frame", Bar)
-        Fill.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
-        Fill.BackgroundColor3 = Color3.fromRGB(100, 200, 255)
-        local FillCorner = Instance.new("UICorner", Fill)
-        FillCorner.CornerRadius = UDim.new(1, 0)
+        Fill.BackgroundColor3 = Color3.fromRGB(100, 180, 255)
+        Fill.Size = UDim2.new((default - min)/(max - min), 0, 1, 0)
+        Fill.BorderSizePixel = 0
 
         local dragging = false
-        local UIS = game:GetService("UserInputService")
 
         local function update(input)
             local pos = math.clamp((input.Position.X - Bar.AbsolutePosition.X) / Bar.AbsoluteSize.X, 0, 1)
@@ -113,16 +163,15 @@ function Library:CreateWindow(title)
             if input.UserInputType == Enum.UserInputType.MouseButton1 then
                 dragging = true
                 update(input)
+                input.Changed:Connect(function()
+                    if input.UserInputState == Enum.UserInputState.End then
+                        dragging = false
+                    end
+                end)
             end
         end)
 
-        Bar.InputEnded:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                dragging = false
-            end
-        end)
-
-        UIS.InputChanged:Connect(function(input)
+        UserInputService.InputChanged:Connect(function(input)
             if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
                 update(input)
             end
